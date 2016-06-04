@@ -11,11 +11,12 @@
 public class ClientCachedFile extends FileContents {
     private FileState state;
     private char accessMode;
-    private FileState ownership;
+    private boolean ownership;
     
     public ClientCachedFile(byte[] bytes, FileState state, String fileName) {
         super(bytes, fileName);
         this.state = state;
+        this.ownership = false;
     }
     
     public FileState getFileState(){
@@ -34,11 +35,11 @@ public class ClientCachedFile extends FileContents {
         this.accessMode = mode;
     }
     
-    public FileState getOwnership(){
+    public boolean getOwnership(){
         return this.ownership;
     }
     
-    public void setOwnership(FileState ownership){
+    public void setOwnership(boolean ownership){
         this.ownership = ownership;
     }
 }

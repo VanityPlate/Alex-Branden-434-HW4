@@ -11,13 +11,16 @@
 import java.io.*;
 import java.util.*;
 import java.rmi.*;
+import java.net.*;
+import java.rmi.server.UnicastRemoteObject;
 
 
 
-public class DFSClient implements DFSClientInterface{
-    private static String serverIp;
-    private static ClientCachedFile myFile = new ClientCachedFile(null, FileState.Invalid, null);
-
+public class DFSClient extends UnicastRemoteObject implements DFSClientInterface{
+    private String serverIp;
+    private ClientCachedFile myFile = new ClientCachedFile(null, FileState.Invalid, null);
+    private ServerInterface myServer = null; 
+    
     public boolean writeback(){
         return true;
     }
@@ -42,10 +45,12 @@ public class DFSClient implements DFSClientInterface{
 
             //Checking Input
             String fileMode;
+            char mode;
             while(true){
                 System.out.println("How(r/w)");
                 fileMode = getInput.next();
                 if(fileMode.length() > 0 && fileMode.charAt(0) == 'r' || fileMode.charAt(0) == 'w'){
+                    mode = fileMode.charAt(0);
                     break;
                 }
                 else{
@@ -55,7 +60,13 @@ public class DFSClient implements DFSClientInterface{
         
             //Checking if file cached
             if(!isCached(fileName)){
-                
+                this.myFile.setMode(mode);
+                if(mode == 'r'){
+                    fileContents = 
+                    this.myFile.setFileState(FileState.Read_Shared);
+                }
+            }
+            else{
             }
         }
     }
@@ -70,7 +81,7 @@ public class DFSClient implements DFSClientInterface{
     public static void main(String args[]) throws Exception{
         //Error checking
         if(args.length < 1){
-            System.err.println("First argument must be server ip!");
+            System.err.println("usage: java DFSClient serverIp");
             return;
         }
         else{
