@@ -101,6 +101,7 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
     
     private void addFileToClient(String fileName, String clientIp) {
         clientToFile.put(clientIp, fileName);
+        addClientToFile(fileName, clientIp);
     }
     
     private void removeClientFromFile(String clientIp) {
@@ -146,6 +147,9 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
         } else {
             serverFile.state = FileState.Read_Shared;
         }
+        
+        removeClientFromFile(myIpName);
+        addFileToClient(fileName, myIpName);
 
         return result;
     }
@@ -159,6 +163,7 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
             return false;
         }
         
+
         serverFile.currentWriter = null;
 
         return true;
