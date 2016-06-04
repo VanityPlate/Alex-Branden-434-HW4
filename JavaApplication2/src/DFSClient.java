@@ -56,6 +56,7 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
             stream.write(this.myFile.get());
         }catch(Exception e){
             e.printStackTrace();
+            return;
         }
     }
     
