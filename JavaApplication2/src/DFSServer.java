@@ -108,7 +108,7 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
     
     private void requestWriteBack(String clientIp) {
          try {
-            DFSClientInterface client = (DFSClientInterface) Naming.lookup("rmi://" + ip + ":" + OUR_PORT + "/dfsclient");
+            DFSClientInterface client = (DFSClientInterface) Naming.lookup("rmi://" + clientIp + ":" + OUR_PORT + "/dfsclient");
             client.writeback();
         } catch(Exception e) {}
     }
@@ -177,7 +177,6 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
             return false;
         }
         
-
         serverFile.currentWriter = null;
 
         return true;
