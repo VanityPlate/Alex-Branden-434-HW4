@@ -37,7 +37,7 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
         return myFile.getFileState() != FileState.Invalid && myFile.getName().equals(fileName);
     }
     
-    private void runClient(){
+    public void runClient(){
         while(true){
             //Getting User Input
             Scanner getInput = new Scanner(System.in);
@@ -64,8 +64,9 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
             if(!isCached(fileName)){
                 this.myFile.setMode(mode);
                 if(mode == 'r'){
-                    fileContents = 
+                    FileContents fileContents = this.myServer.download(this.serverIp, fileName, mode);
                     this.myFile.setFileState(FileState.Read_Shared);
+                    this.myFile.setMode(mode);
                 }
             }
             else{
@@ -83,7 +84,6 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
             e.printStackTrace();
             System.exit(-1);
         }
-        this.runClient();
     }
     
     public static void main(String args[]) throws Exception{
@@ -93,7 +93,16 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
             return;
         }
         else{
-            new DFSClient(args[0]);
+            DFSClient dfsclient = new DFSClient(args[0]);
+            //Registering Self with RMI
+            try{
+                Naming.rebind("rmi://localhost:" + DFSServer.OUR_PORT 
+                        + "/dfsclient", dfsclient);
+            }catch(Exception e){
+                e.printStackTrace();
+                System.exit(1);
+            }
+            dfsclient.runClient();
         }
     }
 }
