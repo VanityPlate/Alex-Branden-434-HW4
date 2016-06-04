@@ -19,13 +19,15 @@ import java.rmi.server.UnicastRemoteObject;
 public class DFSClient extends UnicastRemoteObject implements DFSClientInterface{
     private String serverIp;
     private ClientCachedFile myFile = new ClientCachedFile(null, FileState.Invalid, null);
-    private ServerInterface myServer = null; 
+    private DFSServerInterface myServer = null; 
     
     public boolean writeback(){
+        this.myFile.setFileState(FileState.Realse_Ownership);
         return true;
     }
     
     public boolean invalidate(){
+        this.myFile.setFileState(FileState.Invalid);
         return true;
     }
     
@@ -71,11 +73,17 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
         }
     }
     
-    private DFSClient(String serverIp){
+    private DFSClient(String serverIp)throws Exception{
         //setting serverIp
         this.serverIp = serverIp;
+        try{
+        this.myServer = (DFSServerInterface) Naming.lookup("rmi://" +
+            this.serverIp + ":" + DFSServer.OUR_PORT + "/dfsserver"); 
+        }catch(Exception e){
+            e.printStackTrace();
+            System.exit(-1);
+        }
         this.runClient();
-
     }
     
     public static void main(String args[]) throws Exception{
