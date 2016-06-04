@@ -30,6 +30,12 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
     HashMap<String, String> clientToFile = new HashMap<String, String>();
     HashMap<String, ArrayList<String>> fileToClients = new HashMap<String, ArrayList<String>>();
     
+    public static void main(String[] args) {
+        try {
+           Naming.rebind("rmi://localhost:" + OUR_PORT + "/dfsserver", new DFSServer());
+        } catch (Exception e) {}
+
+    }
     
     public DFSServer()throws RemoteException{
         cachedFiles = new Vector<ServerCachedFile>();
@@ -81,6 +87,11 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
     
     private void invalidateSingleClient(String ip) {
         //TODO: do this
+        try {
+            DFSClientInterface client = (DFSClientInterface) Naming.lookup("rmi://" + ip + ":" + OUR_PORT + "/dfsclient");
+            client.invalidate();
+        } catch(Exception e) {}
+        
     }
     
     private void addClientToFile(String fileName, String clientIp) {
@@ -96,7 +107,10 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
     }
     
     private void requestWriteBack(String clientIp) {
-        
+         try {
+            DFSClientInterface client = (DFSClientInterface) Naming.lookup("rmi://" + ip + ":" + OUR_PORT + "/dfsclient");
+            client.writeback();
+        } catch(Exception e) {}
     }
     
     private void addFileToClient(String fileName, String clientIp) {
