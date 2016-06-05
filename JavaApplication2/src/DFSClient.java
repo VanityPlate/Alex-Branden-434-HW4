@@ -22,9 +22,15 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
     private ClientCachedFile myFile = new ClientCachedFile(null, FileState.Invalid, null);
     private DFSServerInterface myServer = null; 
     private String myIp;
+    private boolean waitingForEmacs = false;
     
     public boolean writeback(){
         this.myFile.setFileState(FileState.Release_Ownership);
+        
+        if (!waitingForEmacs) {
+            releaseOwnership();
+        }
+        System.out.println("Received write back request!");
         return true;
     }
     
@@ -50,6 +56,8 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
         
         try{
             System.out.println("Trying to exec emacs");
+            
+            this.waitingForEmacs = true;
             Process process = processBuilder.start();
 
             process.waitFor();
@@ -59,7 +67,10 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
 
             FileInputStream fin = new FileInputStream(file);
             fin.read(fileContent);
+            fin.close();
             myFile.setContents(fileContent);
+            this.waitingForEmacs = false;
+            
             
         }catch(Exception e){
             e.printStackTrace();
@@ -69,7 +80,11 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
     private void writeFile(String fileName){
         String filePath = "/tmp/" + username + ".txt";
         try{
-            FileOutputStream stream = new FileOutputStream(filePath);
+            
+            String command = "chmod u+w /tmp/" + username + ".txt";
+            Process p = Runtime.getRuntime().exec(command);
+            p.waitFor();
+            FileOutputStream stream = new FileOutputStream(filePath, false);
             stream.write(this.myFile.get());
             stream.close();
         }catch(Exception e){
@@ -92,6 +107,7 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
         Runtime runtime = Runtime.getRuntime( );
         try{
             Process process = runtime.exec( command );
+            process.waitFor();
         }catch(Exception e){
             e.printStackTrace();
             return;
@@ -142,7 +158,7 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
                 FileContents fileContents = null;
                 
                 try {
-                    fileContents =  this.myServer.download(this.serverIp, 
+                    fileContents =  this.myServer.download(this.myIp, 
                         fileName, mode);
                     System.out.println("Got file contents!");
                 } catch(Exception e) {}
@@ -172,7 +188,7 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
                         FileContents fileContents = null;
                         
                         try {
-                            fileContents = this.myServer.download(this.serverIp, 
+                            fileContents = this.myServer.download(this.myIp, 
                             fileName, mode);
                         } catch(Exception e) {
                             
@@ -190,14 +206,20 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
             //Now running emacs
             runEmacs(this.myFile.getName());
             
-            //Doing Final Check if owner of the file writing back to the serveR
+            //Doing Final Check if owner of the file writing back to the server
             if(this.myFile.getFileState() == FileState.Release_Ownership){
-                try {
-                this.myServer.upload(this.myIp, this.myFile.getName(), this.myFile); 
-                this.myFile.setFileState(FileState.Read_Shared);
-                } catch(Exception e) {}
+                releaseOwnership();
             }
         }
+    }
+    
+    private void releaseOwnership() {
+        try {
+            this.myServer.upload(this.myIp, this.myFile.getName(), this.myFile); 
+            this.myFile.setFileState(FileState.Read_Shared);
+            this.myFile.setMode('r');
+            this.myFile.setOwnership(false);
+        } catch(Exception e) {}
     }
     
     private DFSClient(String myIp, String serverIp)throws Exception{

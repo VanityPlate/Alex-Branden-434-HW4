@@ -76,7 +76,7 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
         return newFile;
     }
     
-    private void invalidateClients(String fileName) {
+    private void invalidateClients(String fileName, String writerIp) {
         ArrayList<String> clients = fileToClients.get(fileName);
         
         if (clients == null) {
@@ -84,7 +84,9 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
         }
         
         for(String client : clients) {
-            invalidateSingleClient(client);
+            if (!client.equals(writerIp)) {
+                invalidateSingleClient(client);
+            }
         }
         
     }
@@ -111,9 +113,13 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
     
     private void requestWriteBack(String clientIp) {
          try {
+            System.out.println("Requesting writeback for " + clientIp);
+
             DFSClientInterface client = (DFSClientInterface) Naming.lookup("rmi://" + clientIp + ":" + OUR_PORT + "/dfsclient");
             client.writeback();
-        } catch(Exception e) {}
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
     }
     
     private void addFileToClient(String fileName, String clientIp) {
@@ -141,28 +147,45 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
     public FileContents download(String myIpName, String fileName, char mode) {
         ServerCachedFile serverFile = getFile(fileName);
         
-        FileContents result = serverFile.fileContents;
         
         // Wait until we are not changing owner.
         while(serverFile.state == FileState.Ownership_Change) {}
         
         // Request the owner to write back when finished. 
         if (serverFile.currentWriter != null) {
-            
+            serverFile.state = FileState.Ownership_Change;
+            System.out.println("Requesting write back!");
             requestWriteBack(serverFile.currentWriter);
+            
+            System.out.println("Write back request completed. ");
             
             while(serverFile.state == FileState.Ownership_Change ||
                     serverFile.state == FileState.Write_Owned) {
+                
                 if (serverFile.state == FileState.Write_Owned) {
                     requestWriteBack(serverFile.currentWriter);
                 }
+                
+                System.out.println("Waiting for writeback to continue. ");
+                
             }   
+            
+            System.out.println("Write back completed. ");
         }
         
+        FileContents result = serverFile.fileContents;
+
         if (mode == 'w') {
             serverFile.state = FileState.Write_Owned;
+            serverFile.currentWriter = myIpName;
         } else {
             serverFile.state = FileState.Read_Shared;
+        }
+        
+        System.out.println("About to return file: " + fileName);
+        
+        if(serverFile == null) {
+            System.out.println("Server file is null. ");
         }
         
         removeClientFromFile(myIpName);
@@ -185,10 +208,11 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
     }
         
     public boolean upload(String nyIpName, String fileName, FileContents contents){
-        invalidateClients(fileName);
         System.out.println("Received file! Name: " + fileName);
 
         ServerCachedFile serverFile = getFile(fileName);
+        
+
         
         if (serverFile.state == FileState.Not_Shared) {
             System.out.println("File not shared!");
@@ -197,9 +221,13 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
         
         serverFile.fileContents = contents;
         
+        
         writeFile(serverFile);
         
+        invalidateClients(fileName, serverFile.currentWriter);
+
         serverFile.currentWriter = null;
+        serverFile.state = FileState.Not_Shared;
 
         return true;
     }
