@@ -65,11 +65,11 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
         String command ="";
         if(writable){
            this.myFile.setMode('w');
-            command = "chmod 600 /tmp/" + this.myFile.getName() + ".txt";
+            command = "chmod 600 /tmp/" + "brandenlivermore" + ".txt";
         }
         else{
             this.myFile.setMode('r');
-            command = "chmod 400 /tmp/" + this.myFile.getName() + ".txt";
+            command = "chmod 400 /tmp/" + "brandenlivermore" + ".txt";
         }
         Runtime runtime = Runtime.getRuntime( );
         try{
