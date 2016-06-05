@@ -86,7 +86,6 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
     }
     
     private void invalidateSingleClient(String ip) {
-        //TODO: do this
         try {
             DFSClientInterface client = (DFSClientInterface) Naming.lookup("rmi://" + ip + ":" + OUR_PORT + "/dfsclient");
             client.invalidate();
@@ -167,15 +166,33 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
 
         return result;
     }
+    
+    private void writeFile(ServerCachedFile file) {
+         String filePath = "/tmp/" + file.fileContents.getName();
+        try{
+            FileOutputStream stream = new FileOutputStream(filePath);
+            stream.write(file.fileContents.get());
+            System.out.println("Writing file back to disk!");
+            stream.close();
+        }catch(Exception e){
+            e.printStackTrace();
+            return;
+        }
+    }
         
     public boolean upload(String nyIpName, String fileName, FileContents contents){
         invalidateClients(fileName);
-        
+        System.out.println("Received file! Name: " + fileName);
+
         ServerCachedFile serverFile = getFile(fileName);
         
         if (serverFile.state == FileState.Not_Shared) {
             return false;
         }
+        
+        serverFile.fileContents = contents;
+        
+        writeFile(serverFile);
         
         serverFile.currentWriter = null;
 

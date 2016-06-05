@@ -9,5 +9,5 @@
  * @author Alex
  */
 public enum FileState{
-    Read_Shared, Not_Shared, Write_Owned, Ownership_Change, Invalid, Realse_Ownership 
+    Read_Shared, Not_Shared, Write_Owned, Ownership_Change, Invalid, Release_Ownership 
 }

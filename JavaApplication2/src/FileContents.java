@@ -29,4 +29,8 @@ public class FileContents implements Serializable{
     public String getName(){
         return this.fileName;
     }
+    
+    public void setContents(byte[] contents) {
+        this.contents = contents;
+    }
 }
