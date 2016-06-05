@@ -51,6 +51,8 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
                 return file;
             }
         }
+        
+        System.out.println("File name: " + fileName + " not found. Attempting to load from disk. ");
         return readFromDisk(fileName);
     }
     
@@ -69,7 +71,9 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
         }
 
         FileContents contents = new FileContents(fileContent, fileName);
-        return new ServerCachedFile(contents);
+        ServerCachedFile newFile = new ServerCachedFile(contents);
+        cachedFiles.add(newFile);
+        return newFile;
     }
     
     private void invalidateClients(String fileName) {
@@ -187,6 +191,7 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
         ServerCachedFile serverFile = getFile(fileName);
         
         if (serverFile.state == FileState.Not_Shared) {
+            System.out.println("File not shared!");
             return false;
         }
         

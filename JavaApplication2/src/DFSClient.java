@@ -63,7 +63,6 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
             
         }catch(Exception e){
             e.printStackTrace();
-            return;
         }
     }
     
@@ -75,7 +74,6 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
             stream.close();
         }catch(Exception e){
             e.printStackTrace();
-            return;
         }
     }
     
