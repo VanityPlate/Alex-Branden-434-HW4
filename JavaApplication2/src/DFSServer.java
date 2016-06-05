@@ -79,9 +79,9 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
             return;
         }
         
-        clients.stream().forEach((client) -> {
+        for(String client : clients) {
             invalidateSingleClient(client);
-        });
+        }
         
     }
     

@@ -12,6 +12,6 @@ import java.rmi.*;
 import java.util.*;
 
 public interface DFSServerInterface extends Remote{
-    public FileContents download(String myIpName,String filename, char mode);
-    public boolean upload(String nyIpName, String fileName, FileContents contents);
+    public FileContents download(String myIpName,String filename, char mode) throws RemoteException;
+    public boolean upload(String nyIpName, String fileName, FileContents contents) throws RemoteException;
 }

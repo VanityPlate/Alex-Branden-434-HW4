@@ -12,6 +12,6 @@ import java.util.*;
 import java.rmi.*;
 
 public interface DFSClientInterface extends Remote{
-    public boolean invalidate();
-    public boolean writeback();
+    public boolean invalidate() throws RemoteException;
+    public boolean writeback() throws RemoteException;
 }

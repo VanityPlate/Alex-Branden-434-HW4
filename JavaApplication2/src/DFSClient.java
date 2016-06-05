@@ -40,8 +40,9 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
     
     private static void runEmacs(String fileName){
         Runtime runtime = Runtime.getRuntime( );
-        String command = "emacs" + "/tmp/" + fileName + "txt";
+        String command = "emacs" + " /tmp/brandenlivermore.txt";
         try{
+            System.out.println("Trying to exec emacs");
             Process process = runtime.exec( command );
         }catch(Exception e){
             e.printStackTrace();
@@ -50,7 +51,7 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
     }
     
     private void writeFile(String fileName){
-        String filePath = "/tmp/" + fileName;
+        String filePath = "/tmp/brandenlivermore.txt";
         try{
             FileOutputStream stream = new FileOutputStream(filePath);
             stream.write(this.myFile.get());
@@ -108,12 +109,19 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
                 //checking if current cached file is write owned
                 //if true writing currently cached file up to the server
                 if(this.myFile.getOwnership()){
-                    this.myServer.upload(this.myIp, this.myFile.getName(), this.myFile);
+                    try {
+                        this.myServer.upload(this.myIp, this.myFile.getName(), this.myFile);
+                    } catch(Exception e) {}
                 }
                 
                 //getting file from server
-                FileContents fileContents = this.myServer.download(this.serverIp, 
+                FileContents fileContents = null;
+                
+                try {
+                    fileContents =  this.myServer.download(this.serverIp, 
                         fileName, mode);
+                    System.out.println("Got file contents!");
+                } catch(Exception e) {}
                 
                 //if it is read only
                 if(mode == 'r'){
@@ -137,8 +145,16 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
             else{
                 if(!this.myFile.getOwnership()){
                     if(mode != 'r'){
-                        FileContents fileContents = this.myServer.download(this.serverIp, 
+                        FileContents fileContents = null;
+                        
+                        try {
+                            fileContents = this.myServer.download(this.serverIp, 
                             fileName, mode);
+                        } catch(Exception e) {
+                            
+                        }
+                        
+               
                         this.myFile = new ClientCachedFile(fileContents.get(), 
                             FileState.Write_Owned, fileContents.getName());
                         this.myFile.setOwnership(true);
@@ -152,8 +168,10 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
             
             //Doing Final Check if owner of the file writing back to the serveR
             if(this.myFile.getFileState() == FileState.Realse_Ownership){
+                try {
                 this.myServer.upload(this.myIp, this.myFile.getName(), this.myFile); 
                 this.myFile.setFileState(FileState.Read_Shared);
+                } catch(Exception e) {}
             }
         }
     }
