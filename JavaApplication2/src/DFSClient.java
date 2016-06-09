@@ -22,14 +22,10 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
     private ClientCachedFile myFile = new ClientCachedFile(null, FileState.Invalid, null);
     private DFSServerInterface myServer = null; 
     private String myIp;
-    private boolean waitingForEmacs = false;
     
     public boolean writeback(){
         this.myFile.setFileState(FileState.Release_Ownership);
         
-        if (!waitingForEmacs) {
-            releaseOwnership();
-        }
         System.out.println("Received write back request!");
         return true;
     }
@@ -57,7 +53,6 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
         try{
             System.out.println("Trying to exec emacs");
             
-            this.waitingForEmacs = true;
             Process process = processBuilder.start();
 
             process.waitFor();
@@ -68,9 +63,7 @@ public class DFSClient extends UnicastRemoteObject implements DFSClientInterface
             FileInputStream fin = new FileInputStream(file);
             fin.read(fileContent);
             fin.close();
-            myFile.setContents(fileContent);
-            this.waitingForEmacs = false;
-            
+            myFile.setContents(fileContent);            
             
         }catch(Exception e){
             e.printStackTrace();

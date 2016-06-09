@@ -144,37 +144,33 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
         }
     }
     
-    public FileContents download(String myIpName, String fileName, char mode) {
+    public synchronized FileContents download(String myIpName, String fileName, char mode) {
         ServerCachedFile serverFile = getFile(fileName);
         
-        
-        // Wait until we are not changing owner.
-        while(serverFile.state == FileState.Ownership_Change) {}
-        
         // Request the owner to write back when finished. 
-        if (serverFile.currentWriter != null) {
+        if (serverFile.currentWriter != null && mode == 'w') {
             serverFile.state = FileState.Ownership_Change;
             System.out.println("Requesting write back!");
             requestWriteBack(serverFile.currentWriter);
             
+            int i = 0;
+            
             System.out.println("Write back request completed. ");
             
-            while(serverFile.state == FileState.Ownership_Change ||
-                    serverFile.state == FileState.Write_Owned) {
-                
-                if (serverFile.state == FileState.Write_Owned) {
-                    requestWriteBack(serverFile.currentWriter);
-                }
-                
-                System.out.println("Waiting for writeback to continue. ");
-                
-            }   
+            // Wait for Ownership_Change state to go away.
+            while(serverFile.state == FileState.Ownership_Change) {
+                try {
+                    Thread.sleep(500);
+                    System.out.println("Still waiting. ");
+                } catch(Exception e) { }
+            }
             
-            System.out.println("Write back completed. ");
+            System.out.println("Write back received. Continuing. ");
         }
         
         FileContents result = serverFile.fileContents;
 
+        // Set mode and current writer if necessary
         if (mode == 'w') {
             serverFile.state = FileState.Write_Owned;
             serverFile.currentWriter = myIpName;
@@ -183,10 +179,6 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
         }
         
         System.out.println("About to return file: " + fileName);
-        
-        if(serverFile == null) {
-            System.out.println("Server file is null. ");
-        }
         
         removeClientFromFile(myIpName);
         addFileToClient(fileName, myIpName);
@@ -212,15 +204,12 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
 
         ServerCachedFile serverFile = getFile(fileName);
         
-
-        
         if (serverFile.state == FileState.Not_Shared) {
             System.out.println("File not shared!");
             return false;
         }
         
         serverFile.fileContents = contents;
-        
         
         writeFile(serverFile);
         
@@ -231,5 +220,4 @@ public class DFSServer extends UnicastRemoteObject implements DFSServerInterface
 
         return true;
     }
-    
 }
